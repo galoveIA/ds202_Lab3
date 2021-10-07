@@ -1,0 +1,103 @@
+---
+title: "ds202_lab3"
+author: "Gabe Love"
+date: "10/4/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(readxl)
+library(tidyverse)
+```
+# Question 1
+
+```{r}
+df <- readxl::read_xls("GSS.xls")
+df$`Highest year of school completed` <- as.integer(df$`Highest year of school completed`)
+names(df) <- gsub(" ", "_", names(df))
+
+avgEdu <- df %>% group_by(Marital_status) 
+avgEdu <- summarise(avgEdu, mean = mean(Highest_year_of_school_completed, na.rm = TRUE))
+avgEdu <- arrange(avgEdu, mean)
+
+ggplot(avgEdu, aes( x= reorder(Marital_status, -mean), weight = mean)) + geom_bar()
+```
+
+# Question 2
+
+```{r}
+df <- readxl::read_xls("GSS.xls")
+df$`Highest year of school completed` <- as.integer(df$`Highest year of school completed`)
+names(df) <- gsub(" ", "_", names(df))
+
+betterEdu <- filter(df, (Marital_status == 'Widowed' & Highest_year_of_school_completed > 11.2 ) | 
+                      (Marital_status == 'Seperated' & Highest_year_of_school_completed > 11.9 ) | 
+                      (Marital_status == 'Married' & Highest_year_of_school_completed > 13 ) | 
+                      (Marital_status == 'Divorced' & Highest_year_of_school_completed > 13.1 ) | 
+                      (Marital_status == 'Never Married' & Highest_year_of_school_completed > 13.4 ) | 
+                      (Marital_status == 'No answer' & Highest_year_of_school_completed > 15.5))
+
+str(betterEdu)
+```
+
+# Question 3
+
+```{r}
+df <- readxl::read_xls("GSS.xls")
+df$`Highest year of school completed` <- as.integer(df$`Highest year of school completed`)
+names(df) <- gsub(" ", "_", names(df))
+
+df <- group_by(df, Marital_status) %>% summarise(totals = n(), General_happiness = General_happiness) %>% 
+  group_by(General_happiness, .add = TRUE) %>% summarise(happinessScore = n(), totals = totals, score = 100*happinessScore/totals) %>% unique() %>%
+  filter(General_happiness == "Pretty happy" | General_happiness == "Very happy") %>% summarise(score = score) %>% 
+  summarise(score = sum(score))
+df
+
+ggplot(df, aes(x=reorder(Marital_status, score), weight = score)) + geom_bar() + xlab("Marital Status") + ylab("Happiness Percent")
+
+```
+
+To answer this question, I grouped the data by marital status as well as happiness. To find the happiness score that I am using to order marital status, I found the total number of repsonses for each marital status and then divided the number of responses for each happiness level by that number. I found that those who are married tend to be the happiest.
+
+# Question 4
+
+```{r}
+df <- readxl::read_xls("GSS.xls")
+df$`Highest year of school completed` <- as.integer(df$`Highest year of school completed`)
+names(df) <- gsub(" ", "_", names(df))
+
+df <- group_by(df, Political_party_affiliation) %>% group_by(Marital_status, .add = TRUE) %>% 
+  summarise(totals = n(), General_happiness = General_happiness) %>% 
+  group_by(General_happiness, .add = TRUE) %>% summarise(happinessScore = n(), totals = totals, score = 100*happinessScore/totals) %>% 
+  summarise(score = mean(score)) %>% unique() %>%
+  filter(General_happiness == "Pretty happy" | General_happiness == "Very happy") %>% summarise(score = score) %>% 
+  summarise(score = sum(score))
+df
+
+ggplot(df, aes(x=reorder(Marital_status, score), weight = score, fill = Marital_status)) + geom_bar() + xlab("Marital Status") + 
+  ylab("Happiness Percent") + facet_wrap(~Political_party_affiliation) + theme(axis.text.x = element_blank(), axis.ticks.x=element_blank())
+
+```
+
+Very similar to question three, I grouped my data by happiness and marital status, but this time I also grouped by political affiliation. I found that political affiliation did not change the results much, as those who are married still are the happiness in most cases. 
+
+# Question 5
+
+```{r}
+df <- readxl::read_xls("GSS.xls")
+df$`Highest year of school completed` <- as.integer(df$`Highest year of school completed`)
+names(df) <- gsub(" ", "_", names(df))
+```
+
+## Average education by political affiliation
+
+```{r}
+df <- group_by(df, Political_party_affiliation) %>% summarise(school = mean(Highest_year_of_school_completed, na.rm = TRUE)) %>% arrange(school)
+
+ggplot(df, aes(x = reorder(Political_party_affiliation, school), weight = school, fill = Political_party_affiliation)) + 
+  geom_bar() + theme(axis.text.x = element_blank(), axis.ticks.x=element_blank()) + xlab("Political Affiliation") + 
+  ylab("Average years of school completed")
+
+```
+
+For this question I explored if different political affiliations had different levels of school completed. I grouped my data by politcal affiliation and then found the average number of years of school completed within those groups. I found that strong republicans had an average of 13.4 years completed which was the highest, whereas strong democrats had a slightly lower average of 12.5, with other parties and those leaning more towards republican falling on the higher side. Independants had the lowest average of 12.3.
